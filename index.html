@@ -519,31 +519,36 @@
         }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="text-slate-800 select-none">
 
-    <!-- Auth Modal (Security Layer) -->
-    <div id="authModal" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+    <!-- Auth Modal (Security Layer) - Hidden by default now -->
+    <div id="authModal" class="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform scale-95 transition-transform duration-300" id="authModalContent">
+            <div class="absolute top-4 right-4">
+                <button onclick="toggleAuthModal(false)" class="text-slate-400 hover:text-red-500 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
             <div class="mb-6">
                 <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-shield-alt text-2xl text-blue-600"></i>
                 </div>
                 <h2 class="text-2xl font-black text-slate-800">Acesso Restrito</h2>
-                <p class="text-slate-500 text-sm mt-2">Este sistema contém dados protegidos do LPO System.</p>
+                <p class="text-slate-500 text-sm mt-2">Para visualizar os diagnósticos e projeções, insira sua credencial.</p>
             </div>
             
             <div class="space-y-4">
                 <div>
                     <input type="password" id="authPass" 
                         class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none transition-colors text-center font-bold text-lg" 
-                        placeholder="Digite a Senha de Acesso">
+                        placeholder="Senha de Acesso">
                     <p id="authError" class="text-red-500 text-xs mt-2 font-bold hidden">
-                        <i class="fas fa-exclamation-circle"></i> Senha incorreta ou acesso negado.
+                        <i class="fas fa-exclamation-circle"></i> Senha incorreta.
                     </p>
                 </div>
                 
                 <button id="authBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg shadow-blue-500/30">
-                    <i class="fas fa-unlock mr-2"></i> Desbloquear Sistema
+                    <i class="fas fa-unlock mr-2"></i> Desbloquear Resultados
                 </button>
             </div>
             
@@ -554,11 +559,16 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-7xl mx-auto relative">
         <header class="text-center mb-10 pt-6 relative">
-            <button onclick="openModal()" class="absolute right-0 top-6 text-slate-400 hover:text-blue-600 transition-colors p-2" title="Metodologia">
-                <i class="fas fa-info-circle text-xl"></i>
-            </button>
+            <div class="absolute right-0 top-6 flex gap-2">
+                <button id="loginBtn" onclick="toggleAuthModal(true)" class="text-slate-400 hover:text-green-600 transition-colors p-2" title="Login">
+                    <i class="fas fa-lock text-xl"></i>
+                </button>
+                <button onclick="openModal()" class="text-slate-400 hover:text-blue-600 transition-colors p-2" title="Metodologia">
+                    <i class="fas fa-info-circle text-xl"></i>
+                </button>
+            </div>
             <div class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 rounded-full mb-4">
                 <i class="fas fa-dumbbell text-blue-600"></i>
                 <span class="font-bold text-blue-700 text-sm">SISTEMA DE CONTROLE DE CARGAS LPO</span>
@@ -624,8 +634,21 @@
             </div>
         </div>
 
-        <div class="grid-container grid lg:grid-cols-2 gap-8 mb-10">
-            <!-- BLOCO 1: TERMÔMETROS -->
+        <!-- RESULTADOS PROTEGIDOS (Overlay) -->
+        <div id="resultsOverlay" class="relative group">
+            <div class="absolute inset-0 z-20 bg-slate-100/60 backdrop-blur-sm flex items-center justify-center rounded-2xl transition-all duration-500">
+                <div class="text-center p-6 bg-white/90 rounded-2xl shadow-xl border border-slate-200">
+                    <i class="fas fa-lock text-4xl text-slate-300 mb-3"></i>
+                    <h3 class="text-lg font-bold text-slate-700">Resultados Protegidos</h3>
+                    <p class="text-xs text-slate-500 mb-4 max-w-[200px] mx-auto">Os diagnósticos detalhados são exclusivos para usuários autorizados.</p>
+                    <button onclick="toggleAuthModal(true)" class="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center justify-center gap-2 mx-auto">
+                        <i class="fas fa-key"></i> Liberar Acesso
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid-container grid lg:grid-cols-2 gap-8 mb-10 filter blur-sm transition-all duration-500" id="resultsContainer">
+                <!-- BLOCO 1: TERMÔMETROS -->
             <div class="card p-6 flex flex-col">
                 <div class="flex items-center justify-center mb-8 pb-4 border-b border-slate-100">
                     <h3 class="text-lg font-black text-slate-700 tracking-wide uppercase">Eficiência Técnica</h3>
@@ -793,8 +816,8 @@
             </div>
         </div>
 
-        <!-- DIAGNÓSTICO -->
-        <div class="diagnostic-card p-6 max-w-4xl mx-auto">
+        <!-- DIAGNÓSTICO (Também dentro do bloco protegido) -->
+        <div class="diagnostic-card p-6 max-w-4xl mx-auto filter blur-sm transition-all duration-500" id="diagnosticContainer">
             <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center flex items-center justify-center gap-3">
                 <i class="fas fa-diagnoses text-blue-600"></i>
                 DIAGNÓSTICO DETALHADO
@@ -862,7 +885,7 @@
                     Os valores ideais são calculados com base em padrões olímpicos e análise individualizada
                 </p>
             </div>
-        </div>
+        </div> <!-- End of resultsOverlay wrapper -->
         
         <div class="mt-10 text-center text-sm text-slate-500">
             <p class="flex items-center justify-center gap-2">
