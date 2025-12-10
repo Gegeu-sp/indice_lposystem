@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Prof. Edmilson Dantas">
     <meta name="description" content="Sistema de Controle de Cargas LPO - Metodologia desenvolvida pelo Prof. Edmilson Dantas">
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;">
     <title>Controle de Índice de Cargas LPO</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Crypto Lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         tailwind.config = {
@@ -517,6 +521,39 @@
 </head>
 <body class="text-slate-800">
 
+    <!-- Auth Modal (Security Layer) -->
+    <div id="authModal" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+            <div class="mb-6">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shield-alt text-2xl text-blue-600"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-800">Acesso Restrito</h2>
+                <p class="text-slate-500 text-sm mt-2">Este sistema contém dados protegidos do LPO System.</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <input type="password" id="authPass" 
+                        class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none transition-colors text-center font-bold text-lg" 
+                        placeholder="Digite a Senha de Acesso">
+                    <p id="authError" class="text-red-500 text-xs mt-2 font-bold hidden">
+                        <i class="fas fa-exclamation-circle"></i> Senha incorreta ou acesso negado.
+                    </p>
+                </div>
+                
+                <button id="authBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg shadow-blue-500/30">
+                    <i class="fas fa-unlock mr-2"></i> Desbloquear Sistema
+                </button>
+            </div>
+            
+            <p class="mt-6 text-xs text-slate-400">
+                &copy; LPO System - Prof. Edmilson Dantas<br>
+                <span class="opacity-50">Protegido por Criptografia AES-256</span>
+            </p>
+        </div>
+    </div>
+
     <div class="max-w-7xl mx-auto">
         <header class="text-center mb-10 pt-6 relative">
             <button onclick="openModal()" class="absolute right-0 top-6 text-slate-400 hover:text-blue-600 transition-colors p-2" title="Metodologia">
@@ -965,372 +1002,8 @@
         </div>
     </div>
 
-    <script>
-        // Modal Logic
-        const modal = document.getElementById('methodologyModal');
-        const modalContent = document.getElementById('modalContent');
-
-        function openModal() {
-            modal.classList.remove('hidden');
-            // Small delay to allow display:block to apply before opacity transition
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                modalContent.classList.remove('scale-95');
-                modalContent.classList.add('scale-100');
-            }, 10);
-        }
-
-        function closeModal() {
-            modal.classList.add('opacity-0');
-            modalContent.classList.remove('scale-100');
-            modalContent.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        }
-
-        // Close on click outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
-        });
-
-        // Close on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-                closeModal();
-            }
-        });
-
-        // INPUTS
-        const inputs = ['pesoCorporal', 'prArranque', 'prArremesso', 'prCostas'].map(id => document.getElementById(id));
-        const [peso, arr, rem, costas] = inputs;
-        
-        // ELEMENTOS
-        const barArr = document.getElementById('barArranque');
-        const percArr = document.getElementById('percArranque');
-        const barRem = document.getElementById('barArremesso');
-        const percRem = document.getElementById('percArremesso');
-        
-        const frArr = document.getElementById('frArr');
-        const frRem = document.getElementById('frRem');
-        const frCostas = document.getElementById('frCostas');
-        
-        // Progress bars
-        const arrProgress = document.getElementById('arrProgress');
-        const remProgress = document.getElementById('remProgress');
-        
-        // Bolhas
-        const bMin = document.getElementById('bubbleMin');
-        const bAtual = document.getElementById('bubbleAtual');
-        const bMax = document.getElementById('bubbleMax');
-        const sMin = document.getElementById('stemMin');
-        const sAtual = document.getElementById('stemAtual');
-        const sMax = document.getElementById('stemMax');
-        
-        const arrows = {
-            arr: { icon: document.getElementById('arrowArr'), txt: document.getElementById('txtArr') },
-            rem: { icon: document.getElementById('arrowRem'), txt: document.getElementById('txtRem') },
-            costas: { icon: document.getElementById('arrowCostas'), txt: document.getElementById('txtCostas') }
-        };
-
-        const FACTOR_MIN_AG = 1.26076;
-        const FACTOR_MAX_AG = 1.39;
-        const nf0 = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
-        const nf2 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-        function updateArrowDisplay(arrowObj, icon, color, text) {
-            arrowObj.icon.innerText = icon;
-            arrowObj.icon.className = `text-2xl font-black ${color}`;
-            arrowObj.txt.innerText = text;
-            arrowObj.txt.className = `text-xs font-bold uppercase ${color.replace('arrow-', 'text-')}`;
-        }
-        
-        function updateDynamicArrow(arrowId, iconId, tooltipId, percentage) {
-            const arrowEl = document.getElementById(arrowId);
-            const iconEl = document.getElementById(iconId);
-            const tooltipEl = document.getElementById(tooltipId);
-            
-            if (!arrowEl || !iconEl || !tooltipEl) return;
-            
-            // Clamp percentage between 0 and 100
-            const clampedPct = Math.max(0, Math.min(100, percentage));
-            
-            // Update position (inverted because top: 100% is bottom of tube, top: 0% is top of tube)
-            // But CSS top works from top down. So 100% percentage = 0% top. 0% percentage = 100% top.
-            // Formula: top = 100 - percentage
-            arrowEl.style.top = `${100 - clampedPct}%`;
-            
-            // Update tooltip text
-            tooltipEl.innerText = `${nf0.format(clampedPct)}%`;
-            
-            // Update color based on threshold (80% target as requested)
-            // Using standard traffic light logic: <60 Yellow, 60-80 Green, >80 Red? 
-            // Or specifically requested: "Green when reaching 80%".
-            // Let's stick to the visual thermometer bands roughly:
-            // 0-60: Yellow
-            // 60-80: Green (Ideal range often starts around 60 for Snatch, 80 for C&J? No, Snatch is 60-69, C&J is 80-89)
-            // The user request says: "Correct positioning where arrow indicates 60% when it should be at 80%... Green color displayed when reaching 80%".
-            // This implies a universal rule or specific to C&J? "The indicator arrow... aligning precisely with current percentage".
-            // Let's implement dynamic coloring matching the background gradient logic we established earlier:
-            // 0-60%: Yellow
-            // 60-100%: Green? Or 60-70 Green, 70+ Red?
-            // User said: "Green color displayed when reaching 80%". This might be specific to their mental model of "Good".
-            // Let's map color to the percentage value:
-            
-            let colorClass = 'text-yellow-500';
-            let bgClass = 'bg-yellow-500';
-            
-            if (clampedPct >= 80) {
-                colorClass = 'text-green-600';
-                bgClass = 'bg-green-600';
-            } else if (clampedPct >= 60) {
-                 // Transition zone?
-                 // If user wants Green AT 80, maybe 60-79 is still Yellow? 
-                 // Or maybe 60-79 is Light Green? 
-                 // Let's follow the prompt strictly: "Green color displayed when reaching 80%".
-                 // Implies < 80 is NOT Green (so Yellow).
-                 colorClass = 'text-yellow-500';
-                 bgClass = 'bg-yellow-500';
-            }
-            
-            // However, for Snatch (Arranco), ideal is 60-69. 80 is way too high.
-            // If we apply "Green at 80" to Snatch, it will be Yellow when Ideal (60-69). That seems wrong.
-            // But the user said "The indicator arrow" (singular concept) but applied to "thermometer corresponding".
-            // Maybe they are looking at C&J (Arremesso) where ideal is 80.
-            // Let's try to be smart: 
-            // If Arrow is Arranco (id contains Arranco), Ideal is 60.
-            // If Arrow is Arremesso (id contains Arremesso), Ideal is 80.
-            
-            if (arrowId.includes('Arranco')) {
-                 if (clampedPct >= 60 && clampedPct <= 70) { // Ideal zone for Snatch
-                      colorClass = 'text-green-600';
-                      bgClass = 'bg-green-600';
-                 } else if (clampedPct > 70) {
-                      colorClass = 'text-red-500'; 
-                      bgClass = 'bg-red-500';
-                 } else {
-                      colorClass = 'text-yellow-500';
-                      bgClass = 'bg-yellow-500';
-                 }
-             } else { // Arremesso
-                 if (clampedPct >= 80) { // User explicitly asked for Green at 80
-                      colorClass = 'text-green-600';
-                      bgClass = 'bg-green-600';
-                 } else {
-                      colorClass = 'text-yellow-500';
-                      bgClass = 'bg-yellow-500';
-                 }
-             }
-            
-            // Update Icon Color
-            iconEl.className = `fas fa-caret-left text-3xl drop-shadow-sm transition-colors duration-500 ${colorClass}`;
-            
-            // Update Tooltip Background
-            tooltipEl.className = `absolute left-full ml-2 top-1/2 -translate-y-1/2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${bgClass}`;
-        }
-
-        // Initialize with default values
-        document.addEventListener('DOMContentLoaded', () => {
-             calculate();
-        });
-
-        function calculate() {
-            const sanitize = (v) => {
-                const n = Number(v);
-                if (!isFinite(n)) return 0;
-                return Math.max(0, n);
-            };
-            const vPeso = sanitize(peso.value);
-            const vArr = sanitize(arr.value);
-            const vRem = sanitize(rem.value);
-            const vCostas = sanitize(costas.value);
-
-            // 1. TERMÔMETROS
-            if (vCostas > 0) {
-                const pArr = (vArr / vCostas) * 100;
-                const pRem = (vRem / vCostas) * 100;
-                barArr.style.height = `${Math.min(pArr, 100)}%`;
-                percArr.innerText = `${nf0.format(Math.min(pArr, 100))}%`;
-                barRem.style.height = `${Math.min(pRem, 100)}%`;
-                percRem.innerText = `${nf0.format(Math.min(pRem, 100))}%`;
-                
-                // Update progress bars
-                arrProgress.style.width = `${Math.min(pArr, 100)}%`;
-                remProgress.style.width = `${Math.min(pRem, 100)}%`;
-
-                // Update dynamic arrows
-                updateDynamicArrow('arrowArranco', 'iconArranco', 'tooltipArranco', pArr);
-                updateDynamicArrow('arrowArremesso', 'iconArremesso', 'tooltipArremesso', pRem);
-            } else {
-                barArr.style.height = '0%'; percArr.innerText = '0%';
-                barRem.style.height = '0%'; percRem.innerText = '0%';
-                arrProgress.style.width = '0%';
-                remProgress.style.width = '0%';
-                
-                // Reset dynamic arrows
-                updateDynamicArrow('arrowArranco', 'iconArranco', 'tooltipArranco', 0);
-                updateDynamicArrow('arrowArremesso', 'iconArremesso', 'tooltipArremesso', 0);
-            }
-
-            // 2. FORÇA RELATIVA
-            if (vPeso > 0) {
-                frArr.innerText = nf2.format(vArr / vPeso);
-                frRem.innerText = nf2.format(vRem / vPeso);
-                frCostas.innerText = nf2.format(vCostas / vPeso);
-            } else {
-                frArr.innerText = '0.00'; frRem.innerText = '0.00'; frCostas.innerText = '0.00';
-            }
-
-            // 3. GRÁFICO DE BOLHAS (ZOOM INTELIGENTE)
-            if (vRem > 0) {
-                const minAg = vRem * FACTOR_MIN_AG;
-                const maxAg = vRem * FACTOR_MAX_AG;
-                
-                bMin.innerText = nf0.format(minAg);
-                bAtual.innerText = nf0.format(vCostas);
-                bMax.innerText = nf0.format(maxAg);
-                
-                // LÓGICA DE ZOOM:
-                // Encontrar o menor e maior valor dentre os 3 pontos para definir a escala Y
-                const values = [minAg, maxAg, vCostas];
-                const minY = Math.min(...values) * 0.95; // 5% de margem abaixo
-                const maxY = Math.max(...values) * 1.05; // 5% de margem acima
-                const range = maxY - minY;
-
-                // Função para converter valor em % de altura dentro do range
-                const getH = (val) => {
-                    if (range === 0) return 0;
-                    return ((val - minY) / range) * 100;
-                };
-
-                const pMin = getH(minAg);
-                const pAtual = getH(vCostas);
-                const pMax = getH(maxAg);
-
-                // Aplica alturas
-                bMin.style.bottom = `${pMin}%`; sMin.style.height = `${pMin}%`;
-                bAtual.style.bottom = `${pAtual}%`; sAtual.style.height = `${pAtual}%`;
-                bMax.style.bottom = `${pMax}%`; sMax.style.height = `${pMax}%`;
-                
-            } else {
-                bMin.innerText = "0"; bAtual.innerText = "0"; bMax.innerText = "0";
-                bMin.style.bottom = "0%"; sMin.style.height = "0%";
-                bAtual.style.bottom = "0%"; sAtual.style.height = "0%";
-                bMax.style.bottom = "0%"; sMax.style.height = "0%";
-            }
-
-            // 4. DIAGNÓSTICO
-            if (vRem > 0 && vCostas > 0 && vArr > 0) {
-                const minAg = vRem * FACTOR_MIN_AG;
-                const maxAg = vRem * FACTOR_MAX_AG;
-
-                // Agachamento
-                let iconAg, colorAg, textAg;
-                const range = maxAg - minAg;
-                const pos = vCostas - minAg;
-                const pctRange = pos / range;
-
-                if (vCostas < minAg) { 
-                    iconAg = '↑'; 
-                    colorAg = 'arrow-green'; 
-                    textAg = 'Fraco'; 
-                }
-                else if (pctRange < 0.30) { 
-                    iconAg = '↗'; 
-                    colorAg = 'arrow-yellow'; 
-                    textAg = 'Subindo'; 
-                }
-                else if (pctRange < 0.60) { 
-                    iconAg = '→'; 
-                    colorAg = 'arrow-yellow'; 
-                    textAg = 'Ideal'; 
-                }
-                else if (pctRange < 0.90) { 
-                    iconAg = '↘'; 
-                    colorAg = 'arrow-yellow'; 
-                    textAg = 'Forte'; 
-                }
-                else { 
-                    iconAg = '↓'; 
-                    colorAg = 'arrow-red'; 
-                    textAg = 'Muito Forte'; 
-                }
-                
-
-                updateArrowDisplay(arrows.costas, iconAg, colorAg, textAg);
-
-                // Arremesso
-                const ratioRem = vRem / vCostas;
-                let iconRem, colorRem, textRem;
-                if (ratioRem < 0.75) { 
-                    iconRem = '↑'; 
-                    colorRem = 'arrow-green'; 
-                    textRem = 'Baixo'; 
-                }
-                else if (ratioRem < 0.78) { 
-                    iconRem = '↗'; 
-                    colorRem = 'arrow-yellow'; 
-                    textRem = 'Subindo'; 
-                }
-                else if (ratioRem < 0.81) { 
-                    iconRem = '→'; 
-                    colorRem = 'arrow-yellow'; 
-                    textRem = 'Ideal'; 
-                }
-                else if (ratioRem < 0.85) { 
-                    iconRem = '↘'; 
-                    colorRem = 'arrow-yellow'; 
-                    textRem = 'Alto'; 
-                }
-                else { 
-                    iconRem = '↓'; 
-                    colorRem = 'arrow-red'; 
-                    textRem = 'Limite'; 
-                }
-                updateArrowDisplay(arrows.rem, iconRem, colorRem, textRem);
-
-                // Arranco
-                const ratioArr = vArr / vCostas;
-                let iconArr, colorArr, textArr;
-                if (ratioArr < 0.50) { 
-                    iconArr = '↑'; 
-                    colorArr = 'arrow-green'; 
-                    textArr = 'Baixo'; 
-                }
-                else if (ratioArr < 0.54) { 
-                    iconArr = '↗'; 
-                    colorArr = 'arrow-yellow'; 
-                    textArr = 'Subindo'; 
-                }
-                else if (ratioArr < 0.56) { 
-                    iconArr = '→'; 
-                    colorArr = 'arrow-yellow'; 
-                    textArr = 'Ideal'; 
-                }
-                else if (ratioArr < 0.60) { 
-                    iconArr = '↘'; 
-                    colorArr = 'arrow-yellow'; 
-                    textArr = 'Alto'; 
-                }
-                else { 
-                    iconArr = '↓'; 
-                    colorArr = 'arrow-red'; 
-                    textArr = 'Limite'; 
-                }
-                updateArrowDisplay(arrows.arr, iconArr, colorArr, textArr);
-            }
-        }
-
-        inputs.forEach(i => i.addEventListener('input', calculate));
-        
-        // Preencher com valores de exemplo para demonstração
-        setTimeout(() => {
-            peso.value = "75";
-            arr.value = "110";
-            rem.value = "140";
-            costas.value = "160";
-            calculate();
-        }, 500);
-    </script>
+    <!-- Secure Scripts -->
+    <script src="js/secure-core.js"></script>
+    <script src="js/ui.js"></script>
 </body>
 </html>
