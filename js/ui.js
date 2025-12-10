@@ -31,17 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const els = {
         inputs: {
             peso: document.getElementById('pesoCorporal'),
-            arr: document.getElementById('prArranque'),
+            arr: document.getElementById('prArranco'),
             rem: document.getElementById('prArremesso'),
             costas: document.getElementById('prCostas')
         },
         display: {
             bars: {
-                arr: document.getElementById('barArranque'),
+                arr: document.getElementById('barArranco'),
                 rem: document.getElementById('barArremesso')
             },
             text: {
-                arr: document.getElementById('percArranque'),
+                arr: document.getElementById('percArranco'),
                 rem: document.getElementById('percArremesso')
             },
             progress: {
@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
              }
          }
         
-        iconEl.className = `fas fa-caret-left text-3xl drop-shadow-sm transition-colors duration-500 ${colorClass}`;
+        iconEl.className = `arrow-indicator fas fa-caret-left ${colorClass}`;
         tooltipEl.className = `absolute left-full ml-2 top-1/2 -translate-y-1/2 text-white text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${bgClass}`;
     }
 
