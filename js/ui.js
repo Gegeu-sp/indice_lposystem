@@ -232,16 +232,25 @@ document.addEventListener('DOMContentLoaded', () => {
                  'slate': 'text-slate-300'
              };
              
+             // Mapeamento de Ícones (Texto -> FontAwesome)
+             const iconMap = {
+                 '↑': 'fa-arrow-up',
+                 '↗': 'fa-arrow-trend-up',
+                 '→': 'fa-arrow-right',
+                 '↘': 'fa-arrow-trend-down',
+                 '↓': 'fa-arrow-down',
+                 '-': 'fa-minus'
+             };
+
              const arrowColor = colorMap[data.color] || 'text-slate-300';
-             // Texto usa mesma cor, mas talvez um tom mais escuro ou igual? Vamos usar igual para simplicidade
-             // Ou conforme original: arrow-green, arrow-yellow, arrow-red
+             const faIcon = iconMap[data.icon] || 'fa-arrow-right';
              
-             arrow.innerText = data.icon;
+             // Atualiza ícone com FontAwesome
+             arrow.innerHTML = `<i class="fas ${faIcon}"></i>`;
              arrow.className = `arrow-icon ${arrowColor}`;
              
              txt.innerText = data.label;
-             // Badge style text?
-             // Original: text-xs font-bold uppercase ${color}
+             // Badge style text
              txt.className = `text-base font-bold w-28 text-right ${arrowColor.replace('text-', 'text-')}`;
          };
          
@@ -307,8 +316,11 @@ document.addEventListener('DOMContentLoaded', () => {
                   colorClass = 'text-red-500'; bgClass = 'bg-red-500';
              }
          } else { 
-             if (clampedPct >= 80) {
+             // Arremesso: Amarelo (default) <= 70%, Verde 80-90%, Vermelho >= 100%
+             if (clampedPct >= 80 && clampedPct <= 90) {
                   colorClass = 'text-green-600'; bgClass = 'bg-green-600';
+             } else if (clampedPct >= 100) {
+                  colorClass = 'text-red-500'; bgClass = 'bg-red-500';
              }
          }
         
