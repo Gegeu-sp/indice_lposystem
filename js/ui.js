@@ -212,39 +212,42 @@ document.addEventListener('DOMContentLoaded', () => {
         updateBubbles(metrics.proj_min, metrics.proj_max, parseFloat(data.costas));
 
         // 4. Diagnóstico
-        // (Aqui entraria a atualização dos textos de diagnóstico se tivéssemos portado essa lógica para o secure-core)
-        // Como simplificação, a lógica visual antiga ainda reside em index.html/old scripts se não foi removida?
-        // Ah, eu sobrescrevi ui.js inteiro. A lógica de diagnóstico sumiu na versão anterior.
-        // Vou recolocar a lógica visual básica de diagnóstico aqui, mas ela só roda se desbloqueado.
-        
-        updateDiagnostics(metrics, parseFloat(data.costas), parseFloat(data.rem), parseFloat(data.arr));
+        // Agora recebemos os dados prontos do Secure Core
+        if (result.diagnostics) {
+            updateDiagnostics(result.diagnostics);
+        }
     }
     
-    function updateDiagnostics(metrics, vCostas, vRem, vArr) {
-         // Reimplementação simplificada da lógica visual
-         // Como temos as métricas calculadas (eff_arr, eff_rem), podemos usar
-         // Mas precisamos das faixas. As faixas estão no secure core?
-         // O secure core retorna proj_min e proj_max.
-         
-         // Se quisermos diagnóstico textual "Fraco/Forte", precisamos da lógica.
-         // Vou adicionar uma lógica simples de exibição baseada nos valores recebidos.
-         // Para manter 100% seguro, o texto "Fraco/Forte" deveria vir do Core.
-         // Mas para UI feedback rápido:
-         
-         const updateArrow = (id, txtId, val, min, max) => {
+    function updateDiagnostics(diag) {
+         const updateArrow = (id, txtId, data) => {
              const arrow = document.getElementById(id);
              const txt = document.getElementById(txtId);
              if(!arrow || !txt) return;
              
-             // Lógica visual simples
-             // Se não temos as faixas exatas aqui (estão no core), usamos heurística ou passamos no result.
-             // Vamos assumir que se está desbloqueado, podemos mostrar algo.
-             // Para não duplicar lógica sensível, vamos deixar estático ou simples por enquanto.
-             arrow.innerText = '→'; 
-             txt.innerText = 'Calculado';
+             // Mapeamento de cores
+             const colorMap = {
+                 'green': 'text-green-600',
+                 'yellow': 'text-yellow-500',
+                 'red': 'text-red-500',
+                 'slate': 'text-slate-300'
+             };
+             
+             const arrowColor = colorMap[data.color] || 'text-slate-300';
+             // Texto usa mesma cor, mas talvez um tom mais escuro ou igual? Vamos usar igual para simplicidade
+             // Ou conforme original: arrow-green, arrow-yellow, arrow-red
+             
+             arrow.innerText = data.icon;
+             arrow.className = `arrow-icon ${arrowColor}`;
+             
+             txt.innerText = data.label;
+             // Badge style text?
+             // Original: text-xs font-bold uppercase ${color}
+             txt.className = `text-base font-bold w-28 text-right ${arrowColor.replace('text-', 'text-')}`;
          };
          
-         // Na versão real, o secure-core deve retornar { status_arr: "Fraco", status_rem: "Ideal" ... }
+         updateArrow('arrowArr', 'txtArr', diag.arr);
+         updateArrow('arrowRem', 'txtRem', diag.rem);
+         updateArrow('arrowCostas', 'txtCostas', diag.costas);
     }
 
     function updateThermometer(bar, text, progress, val) {

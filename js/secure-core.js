@@ -77,10 +77,44 @@ const _0x1a2b = {
                 eff_rem: C > 0 ? (R / C) * 100 : 0,
                 proj_min: R * K1,
                 proj_max: R * K2
+            },
+            diagnostics: {
+                // Diagnóstico Agachamento (Baseado na Projeção)
+                costas: this._diagCostas(C, R * K1, R * K2),
+                // Diagnóstico Arremesso (Baseado na Eficiência)
+                rem: this._diagRatio(R / C, 0.75, 0.78, 0.81, 0.85),
+                // Diagnóstico Arranco (Baseado na Eficiência)
+                arr: this._diagRatio(A / C, 0.50, 0.54, 0.56, 0.60)
             }
         };
 
         return res;
+    },
+
+    // Diagnóstico Agachamento (Privado)
+    _diagCostas: function(val, min, max) {
+        if (val <= 0 || min <= 0) return { label: '-', icon: '→', color: 'slate' };
+        
+        const range = max - min;
+        const pos = val - min;
+        const pct = pos / range;
+
+        if (val < min) return { label: 'Fraco', icon: '↑', color: 'green' }; // Precisa subir
+        if (pct < 0.30) return { label: 'Subindo', icon: '↗', color: 'yellow' };
+        if (pct < 0.60) return { label: 'Ideal', icon: '→', color: 'yellow' }; // Estável
+        if (pct < 0.90) return { label: 'Forte', icon: '↘', color: 'yellow' };
+        return { label: 'Muito Forte', icon: '↓', color: 'red' }; // Muito forte (ineficiente?)
+    },
+
+    // Diagnóstico Razão (Privado)
+    _diagRatio: function(ratio, t1, t2, t3, t4) {
+        if (!isFinite(ratio) || ratio <= 0) return { label: '-', icon: '→', color: 'slate' };
+        
+        if (ratio < t1) return { label: 'Baixo', icon: '↑', color: 'green' };
+        if (ratio < t2) return { label: 'Subindo', icon: '↗', color: 'yellow' };
+        if (ratio < t3) return { label: 'Ideal', icon: '→', color: 'yellow' };
+        if (ratio < t4) return { label: 'Alto', icon: '↘', color: 'yellow' };
+        return { label: 'Limite', icon: '↓', color: 'red' };
     },
 
     // Logger Seguro
