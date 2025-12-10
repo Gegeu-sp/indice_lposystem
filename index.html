@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="author" content="Prof. Edmilson Dantas">
     <meta name="description" content="Sistema de Controle de Cargas LPO - Metodologia desenvolvida pelo Prof. Edmilson Dantas">
     <!-- Security Headers -->
@@ -452,25 +452,7 @@
             color: #dc2626;
         }
         
-        @media (max-width: 768px) {
-            .thermometer-wrapper {
-                flex-direction: column;
-                height: auto;
-                gap: 24px;
-                padding: 12px;
-            }
-            
-            /* Removed bubble-area flex-direction: column to maintain chart integrity on mobile */
-            
-            .chart-box {
-                height: 520px;
-            }
-            
-            .grid-container {
-                grid-template-columns: 1fr !important;
-            }
-        }
-        
+        /* Responsive Optimizations */
         @media (max-width: 480px) {
             .input-grid {
                 grid-template-columns: 1fr !important;
@@ -481,8 +463,48 @@
             }
             
             .chart-box {
-                height: 520px;
+                height: 400px; /* Reduced height for mobile */
+                padding: 12px;
             }
+
+            .thermometer-wrapper {
+                height: auto;
+                min-height: 250px;
+            }
+
+            .chart-title {
+                font-size: 1rem;
+                padding: 4px 8px;
+                width: 90%;
+            }
+
+            /* Adjust input fields for touch */
+            .input-field {
+                font-size: 16px; /* Prevents zoom on iOS */
+                padding: 12px;
+            }
+
+            /* Stack bubbles vertically if needed or adjust spacing */
+            .bubble-area {
+                left: 40px;
+                right: 10px;
+            }
+        }
+
+        @media (min-width: 481px) and (max-width: 768px) {
+            .thermometer-wrapper {
+                flex-direction: row; /* Keep side-by-side on tablets if space allows, or column */
+                gap: 12px;
+            }
+            
+            .chart-box {
+                height: 450px;
+            }
+        }
+
+        /* General touch targets */
+        button, input {
+            touch-action: manipulation;
         }
         
         .chart-footer {
@@ -519,7 +541,7 @@
         }
     </style>
 </head>
-<body class="text-slate-800 select-none">
+<body class="text-slate-800 select-none antialiased text-base md:text-lg">
 
     <!-- Auth Modal (Security Layer) - Hidden by default now -->
     <div id="authModal" class="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
